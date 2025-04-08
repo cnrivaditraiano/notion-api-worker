@@ -1,13 +1,16 @@
 import {
-  DecorationType,
-  ColumnType,
-  RowContentType,
   BlockType,
+  ColumnType,
+  DecorationType,
+  RowContentType,
   RowType,
 } from "./types";
 
 export const idToUuid = (path: string): string =>
-  `${path.slice(0, 8)}-${path.slice(8, 12)}-${path.slice(12, 16)}-${path.slice(16, 20)}-${path.slice(20)}`;
+  `${path.slice(0, 8)}-${path.slice(8, 12)}-${path.slice(12, 16)}-${path.slice(
+    16,
+    20
+  )}-${path.slice(20)}`;
 
 export const parsePageId = (id: string) => {
   if (id) {
@@ -72,6 +75,10 @@ export const getNotionValue = (
 
           return { name: v[0] as string, url: url.toString(), rawUrl };
         });
+    case "status":
+      console.log(val[0][0]);
+      return val[0][0];
+
     default:
       console.log({ val, type });
       return "Not supported";

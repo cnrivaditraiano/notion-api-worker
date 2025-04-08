@@ -29,6 +29,8 @@ type AdditionalDecorationType = [string, SubDecorationType[]];
 export type DecorationType = BaseDecorationType | AdditionalDecorationType;
 
 export type ColumnType =
+  | "status"
+  | "formula"
   | "select"
   | "text"
   | "date"
