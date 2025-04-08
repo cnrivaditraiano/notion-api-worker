@@ -13,8 +13,8 @@
 // webpack_config = "webpack.config.js"
 {
   "name": "romaper2-notion-worker",
-  "account_id": "12345678901234567890",
   "workers_dev": true,
   "main": "src/index.ts"
+  //   "account_id":"1c139cb8aff626f67ed1a32ec0293e62"
   //   "route": " romaper2-notion-worker.dev-1c1.workers.dev/*"
 }
