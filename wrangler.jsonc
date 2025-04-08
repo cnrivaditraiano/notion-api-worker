@@ -1,0 +1,20 @@
+// # name = "notion-cloudflare-worker"
+// # webpack_config = "webpack.config.js"
+// # type = "webpack"
+// # workers_dev = true
+
+// # account_id = ""
+// # zone_id = ""
+
+// # route = "notion-api.splitbee.io/*"
+// type = "webpack"
+// name = "romaper2-notion-worker"
+// workers_dev = true
+// webpack_config = "webpack.config.js"
+{
+  "name": "romaper2-notion-worker",
+  "account_id": "12345678901234567890",
+  "workers_dev": true,
+  "main": "src/index.ts"
+  //   "route": " romaper2-notion-worker.dev-1c1.workers.dev/*"
+}
