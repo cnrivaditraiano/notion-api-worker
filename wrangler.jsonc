@@ -12,6 +12,8 @@
 // workers_dev = true
 // webpack_config = "webpack.config.js"
 {
+  "compatibility_date": "2025-04-08",
+
   "name": "romaper2-notion-worker",
   "workers_dev": true,
   "main": "src/index.ts"
