@@ -10,9 +10,7 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "tiny-request-router": "^1.2.2"
-  },
-  "devDependencies": {
+    "tiny-request-router": "^1.2.2",
     "@types/node": "^14.0.24",
     "prettier": "^2.0.5",
     "ts-loader": "^8.0.1",
