@@ -50,7 +50,13 @@ export type ColumnSchemaType = {
   type: ColumnType;
 };
 
-type UserType = { id: string; full_name: string };
+export type NotionUserInfo = {
+  id: string;
+  firstName: string;
+  lastLame: string;
+  fullName: string;
+  profilePhoto: string;
+};
 
 export type RowContentType =
   | string
@@ -58,7 +64,7 @@ export type RowContentType =
   | number
   | string[]
   | { title: string; id: string }
-  | UserType[]
+  | NotionUserInfo[]
   | DecorationType[]
   | { name: string; url: string }[];
 
@@ -92,13 +98,20 @@ export interface CollectionType {
   };
 }
 
-export interface RowType {
-  value: {
-    id: string;
-    parent_id: string;
-    properties: { [key: string]: DecorationType[] };
-  };
+interface RowValueType {
+  id: string;
+  parent_id: string;
+  properties: { [key: string]: DecorationType[] };
 }
+
+export interface RowType {
+  value: RowValueType;
+}
+
+/** Raw block record from Notion API — may have double-nested value */
+export type NotionBlockRecord = {
+  value: RowValueType | { value: RowValueType };
+};
 
 export type JSONData =
   | null
@@ -151,7 +164,7 @@ export interface RecordMapType {
 export interface LoadPageChunkData {
   recordMap: RecordMapType;
   cursor: {
-    stack: any[];
+    stack: unknown[];
   };
 }
 
@@ -159,7 +172,7 @@ type CollectionViewType = "table" | "gallery";
 
 export interface CollectionData {
   recordMap: {
-    block: { [key: string]: RowType };
+    block: { [key: string]: NotionBlockRecord };
     collection_view: {
       [key: string]: {
         value: { type: CollectionViewType };

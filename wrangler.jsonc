@@ -2,21 +2,27 @@
 // # webpack_config = "webpack.config.js"
 // # type = "webpack"
 // # workers_dev = true
-
 // # account_id = ""
 // # zone_id = ""
-
 // # route = "notion-api.splitbee.io/*"
 // type = "webpack"
 // name = "romaper2-notion-worker"
 // workers_dev = true
 // webpack_config = "webpack.config.js"
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "compatibility_date": "2025-04-08",
-
   "name": "romaper2-notion-worker",
   "workers_dev": true,
-  "main": "src/index.ts"
-  //   "account_id":"1c139cb8aff626f67ed1a32ec0293e62"
+  "main": "src/index.ts",
+  "account_id": "1c139cb8aff626f67ed1a32ec0293e62",
+  "routes": [
+    {
+      "pattern": "blog.romaper2.com",
+      "zone_name": "romaper2.com",
+      "custom_domain": true,
+    }
+  ],
+  "preview_urls": true
   //   "route": " romaper2-notion-worker.dev-1c1.workers.dev/*"
 }

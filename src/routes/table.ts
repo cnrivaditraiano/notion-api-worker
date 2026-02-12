@@ -1,18 +1,29 @@
+
+import type {
+  CollectionType,
+  HandlerRequest,
+  NotionBlockRecord,
+  RowContentType,
+  RowType,
+} from "../notion-api/types";
 import {
+  fetchNotionUsers,
   fetchPageById,
   fetchTableData,
-  fetchNotionUsers,
 } from "../notion-api/notion";
-import { parsePageId, getNotionValue } from "../notion-api/utils";
-import type {
-  RowContentType,
-  CollectionType,
-  RowType,
-  HandlerRequest,
-} from "../notion-api/types";
-import { createResponse } from "../utils/response";
+import { getNotionValue } from "../notion-api/utils";
 import { getNotionToken } from "../utils/index";
+import { createResponse } from "../utils/response";
   type Row = { id: string; [key: string]: RowContentType };
+
+/** Normalize a Notion block record that may have double-nested value */
+function normalizeBlock(block: NotionBlockRecord): RowType {
+  const val = block?.value;
+  if ("value" in val && !("properties" in val)) {
+    return { ...block, value: val.value } as RowType;
+  }
+  return block as RowType;
+}
 
 export const getTableData = async (
   collection: CollectionType,
@@ -31,7 +42,7 @@ export const getTableData = async (
 
   const tableArr: RowType[] =
     table.result.reducerResults.collection_group_results.blockIds.map(
-      (id: string) => table.recordMap.block[id]
+      (id: string) => normalizeBlock(table.recordMap.block[id])
     );
 
   const tableData = tableArr.filter(
@@ -52,7 +63,7 @@ export const getTableData = async (
         row[schema.name] = raw ? val : getNotionValue(val, schema.type, td);
         if (schema.type === "person" && row[schema.name]) {
           const users = await fetchNotionUsers(row[schema.name] as string[]);
-          row[schema.name] = users as any;
+          row[schema.name] = users;
         }
       }
     }
@@ -96,14 +107,11 @@ export async function getTable({  pageId, notionToken, }: { pageId: string; noti
   } = Object.keys(page.recordMap.collection_view).map(
     (k) => page.recordMap.collection_view[k]
   )[0];
-  console.log(`Fetched collection and view for page ${pageId}:`, { collection, collectionView });
-
   const data = await getTableData(
     collection,
     collectionView.value.id,
     notionToken
   );
-  console.log(`Processed table data:`, data);
 
   return {
     success: true,

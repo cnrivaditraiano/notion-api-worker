@@ -17,7 +17,7 @@ const addCacheTags = (c: Context, tags: string[]) => {
     c.header('Cache-Tag', ["global-notion", ...tags].join(', '));
 }
 const app = new Hono().basePath("/v1");
-// app.use("*", cacheSettings);
+app.use("*", cacheSettings);
 
 app.get("/page/:pageId", async (c) => {
     const pageId = parsePageId(c.req.param("pageId"));
