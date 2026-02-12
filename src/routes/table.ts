@@ -2,16 +2,17 @@ import {
   fetchPageById,
   fetchTableData,
   fetchNotionUsers,
-} from "../notion-api/notion.js";
-import { parsePageId, getNotionValue } from "../notion-api/utils.js";
-import {
+} from "../notion-api/notion";
+import { parsePageId, getNotionValue } from "../notion-api/utils";
+import type {
   RowContentType,
   CollectionType,
   RowType,
   HandlerRequest,
-} from "../notion-api/types.js";
-import { createResponse } from "../utils/response.js";
-import { getNotionToken } from "../utils/index.js";
+} from "../notion-api/types";
+import { createResponse } from "../utils/response";
+import { getNotionToken } from "../utils/index";
+  type Row = { id: string; [key: string]: RowContentType };
 
 export const getTableData = async (
   collection: CollectionType,
@@ -35,10 +36,9 @@ export const getTableData = async (
 
   const tableData = tableArr.filter(
     (b) =>
-      b.value && b.value.properties && b.value.parent_id === collection.value.id
+      b.value?.properties && b.value.parent_id === collection.value.id
   );
 
-  type Row = { id: string; [key: string]: RowContentType };
 
   const rows: Row[] = [];
 
@@ -63,15 +63,29 @@ export const getTableData = async (
 };
 
 export async function tableRoute(c: HandlerRequest) {
-  const pageId = parsePageId(c.req.param("pageId"));
-  const notionToken = getNotionToken(c);
-  const page = await fetchPageById(pageId!, notionToken);
-
-  if (!page.recordMap.collection)
+  const pageId = c.req.param("pageId");
+   const notionToken = getNotionToken(c);
+  if (!pageId || !notionToken) {
     return createResponse(
-      JSON.stringify({ error: "No table found on Notion page: " + pageId }),
-      { headers: {}, statusCode: 401, request: c }
+      JSON.stringify({ error: "Invalid Notion page ID or Notion token" }),
+      { headers: {}, statusCode: 400, request: c }
     );
+  }
+  return await getTable({ pageId, notionToken });
+ 
+}
+
+
+export async function getTable({  pageId, notionToken, }: { pageId: string; notionToken: string }): Promise<{ success: true; data: Row[] } | { success: false; error: string; data: null }> {
+
+  const page = await fetchPageById(pageId, notionToken);
+  if (!page.recordMap.collection)
+    return {
+      success: false,
+      error: `No table found on Notion page: ${pageId}`,
+      data: null
+    }
+    
 
   const collection = Object.keys(page.recordMap.collection).map(
     (k) => page.recordMap.collection[k]
@@ -82,12 +96,18 @@ export async function tableRoute(c: HandlerRequest) {
   } = Object.keys(page.recordMap.collection_view).map(
     (k) => page.recordMap.collection_view[k]
   )[0];
+  console.log(`Fetched collection and view for page ${pageId}:`, { collection, collectionView });
 
-  const { rows } = await getTableData(
+  const data = await getTableData(
     collection,
     collectionView.value.id,
     notionToken
   );
+  console.log(`Processed table data:`, data);
 
-  return createResponse(rows, { request: c });
+  return {
+    success: true,
+    data: data.rows,
+
+  }
 }

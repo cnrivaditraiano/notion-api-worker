@@ -1,11 +1,11 @@
-import {
+import type {
   JSONData,
   NotionUserType,
   LoadPageChunkData,
   CollectionData,
   NotionSearchParamsType,
   NotionSearchResultsType,
-} from "./types.js";
+} from "./types";
 
 const NOTION_API = "https://www.notion.so/api/v3";
 
@@ -38,11 +38,11 @@ const fetchNotionData = async <T extends any>({
     },
     body: JSON.stringify(body),
   });
-
-  return res.json() as Promise<T>;
+  const data = await res.json();
+  return data as T;
 };
 
-export const fetchPageById = async (pageId: string, notionToken?: string) => {
+export const fetchPageById = async (pageId: string, notionToken: string) => {
   const res = await fetchNotionData<LoadPageChunkData>({
     resource: "loadPageChunk",
     body: {
@@ -51,7 +51,6 @@ export const fetchPageById = async (pageId: string, notionToken?: string) => {
     },
     notionToken,
   });
-
   return res;
 };
 

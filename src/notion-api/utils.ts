@@ -13,10 +13,8 @@ export const idToUuid = (path: string): string =>
   )}-${path.slice(20)}`;
 
 export const parsePageId = (id: string) => {
-  if (id) {
     const rawId = id.replace(/\-/g, "").slice(-32);
     return idToUuid(rawId);
-  }
 };
 
 export const getNotionValue = (

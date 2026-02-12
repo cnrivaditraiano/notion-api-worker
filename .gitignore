@@ -3,6 +3,8 @@ node_modules
 worker
 wrangler.toml
 
+.wrangler
+
 .env
 .dev.vars
 
