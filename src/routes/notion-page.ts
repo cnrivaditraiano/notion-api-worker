@@ -8,6 +8,32 @@ import { getTableData } from "./table";
 import { createResponse } from "../utils/response";
 import { getNotionToken } from "../utils/index";
 
+const normalizeBlockRecord = (block: any) => {
+  if (!block || !block.value) {
+    return block;
+  }
+
+  if (block.value.value && typeof block.value.value === "object") {
+    return {
+      ...block,
+      role: block.role ?? block.value.role,
+      value: block.value.value,
+    };
+  }
+
+  return block;
+};
+
+const normalizeBlockMap = (blocks: Record<string, any>) => {
+  const normalized: Record<string, BlockType & { collection?: any }> = {};
+
+  for (const [id, block] of Object.entries(blocks || {})) {
+    normalized[id] = normalizeBlockRecord(block);
+  }
+
+  return normalized;
+};
+
 export async function pageRoute(c: HandlerRequest) {
   const pageId = parsePageId(c.req.param("pageId"));
   const notionToken = getNotionToken(c);
@@ -17,7 +43,7 @@ export async function pageRoute(c: HandlerRequest) {
 
   const page = await fetchPageById(pageId!, notionToken);
 
-  const baseBlocks = page.recordMap.block;
+  const baseBlocks = normalizeBlockMap(page.recordMap.block);
 
   let allBlocks: { [id: string]: BlockType & { collection?: any } } = {
     ...baseBlocks,
@@ -43,8 +69,8 @@ export async function pageRoute(c: HandlerRequest) {
       break;
     }
 
-    const newBlocks = await fetchBlocks(pendingBlocks, notionToken).then(
-      (res) => res.recordMap.block
+    const newBlocks = await fetchBlocks(pendingBlocks, notionToken).then((res) =>
+      normalizeBlockMap(res.recordMap.block)
     );
 
     allBlocks = { ...allBlocks, ...newBlocks };
@@ -113,7 +139,7 @@ export async function pageRoute(c: HandlerRequest) {
 
 export async function getPageBlocks({ pageId, notionToken }: { pageId: string; notionToken: string }) {
   const page = await fetchPageById(pageId, notionToken);
- const baseBlocks = page.recordMap.block;
+ const baseBlocks = normalizeBlockMap(page.recordMap.block);
 
   let allBlocks: { [id: string]: BlockType & { collection?: any } } = {
     ...baseBlocks,
@@ -139,8 +165,8 @@ export async function getPageBlocks({ pageId, notionToken }: { pageId: string; n
       break;
     }
 
-    const newBlocks = await fetchBlocks(pendingBlocks, notionToken).then(
-      (res) => res.recordMap.block
+    const newBlocks = await fetchBlocks(pendingBlocks, notionToken).then((res) =>
+      normalizeBlockMap(res.recordMap.block)
     );
 
     allBlocks = { ...allBlocks, ...newBlocks };

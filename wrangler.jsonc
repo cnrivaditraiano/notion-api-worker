@@ -15,7 +15,6 @@
   "name": "romaper2-notion-worker",
   "workers_dev": true,
   "main": "src/index.ts",
-  "account_id": "1c139cb8aff626f67ed1a32ec0293e62",
   "routes": [
     {
       "pattern": "blog.romaper2.com",
