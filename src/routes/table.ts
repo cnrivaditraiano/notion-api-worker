@@ -2,7 +2,6 @@
 import type {
   CollectionType,
   HandlerRequest,
-  NotionBlockRecord,
   RowContentType,
   RowType,
 } from "../notion-api/types";
@@ -11,83 +10,45 @@ import {
   fetchPageById,
   fetchTableData,
 } from "../notion-api/notion";
+import {
+  normalizeBlockRecord,
+  normalizeCollectionRecord,
+  normalizeCollectionViewRecord,
+  normalizeRowRecord,
+} from "../notion-api/normalize";
 import { getNotionValue } from "../notion-api/utils";
 import { getNotionToken } from "../utils/index";
 import { createResponse } from "../utils/response";
 type Row = { id: string; [key: string]: RowContentType };
 
-/** Normalize a Notion block record that may have double-nested value */
-function normalizeBlock(block?: NotionBlockRecord): RowType | null {
-  const val = block?.value;
-  if (!val) {
-    return null;
-  }
-  if ("value" in val && !("properties" in val)) {
-    return { ...block, value: val.value } as RowType;
-  }
-  return block as RowType;
-}
-
-type MaybeNestedValue<T> = T | { value: T };
-
-const unwrapValue = <T>(value: MaybeNestedValue<T>): T => {
-  return "value" in (value as object) ? (value as { value: T }).value : (value as T);
-};
-
-const normalizeCollection = (
-  collection: { value: MaybeNestedValue<CollectionType["value"]> }
-): CollectionType => {
-  return { ...collection, value: unwrapValue(collection.value) } as CollectionType;
-};
-
-const normalizeCollectionView = (
-  view: { value: MaybeNestedValue<{ id: string }> }
-): { value: { id: string } } => {
-  return { ...view, value: unwrapValue(view.value) };
-};
-
 const getFirstCollection = (
-  collectionMap?: Record<string, { value: MaybeNestedValue<CollectionType["value"]> }>
+  collectionMap?: Record<string, unknown>
 ) => {
-  if (!collectionMap) {
-    return null;
-  }
-
+  if (!collectionMap) return null;
   for (const entry of Object.values(collectionMap)) {
-    const normalized = normalizeCollection(entry);
-    if (normalized?.value?.id) {
-      return normalized;
-    }
+    const normalized = normalizeCollectionRecord(entry);
+    if (normalized) return normalized;
   }
-
   return null;
 };
 
 const getFirstCollectionView = (
-  collectionViewMap?: Record<string, { value: MaybeNestedValue<{ id: string }> }>,
+  collectionViewMap?: Record<string, unknown>,
   preferredViewIds?: string[]
 ) => {
-  if (!collectionViewMap) {
-    return null;
-  }
+  if (!collectionViewMap) return null;
 
   if (preferredViewIds?.length) {
     for (const viewId of preferredViewIds) {
       const view = collectionViewMap[viewId];
-      if (view) {
-        const normalized = normalizeCollectionView(view);
-        if (normalized?.value?.id) {
-          return normalized;
-        }
-      }
+      const normalized = normalizeCollectionViewRecord(view);
+      if (normalized) return normalized;
     }
   }
 
   for (const entry of Object.values(collectionViewMap)) {
-    const normalized = normalizeCollectionView(entry);
-    if (normalized?.value?.id) {
-      return normalized;
-    }
+    const normalized = normalizeCollectionViewRecord(entry);
+    if (normalized) return normalized;
   }
 
   return null;
@@ -105,19 +66,23 @@ const resolveCollectionContext = async (pageId: string, notionToken: string) => 
 
   const blocks = page.recordMap.block ?? {};
   for (const block of Object.values(blocks)) {
-    const blockValue = (block as any)?.value;
+    const normalizedBlock = normalizeBlockRecord(block);
+    const blockValue = normalizedBlock?.value as
+      | (RowType["value"] & { type?: string; view_ids?: string[] })
+      | undefined;
+
     if (blockValue?.type !== "collection_view") {
       continue;
     }
 
-    const viewIds = (blockValue.view_ids as string[] | undefined) ?? [];
+    const viewIds = blockValue.view_ids ?? [];
+    const blockId = blockValue.id ?? pageId;
 
     collection = getFirstCollection(page.recordMap.collection);
     collectionView = getFirstCollectionView(page.recordMap.collection_view, viewIds);
 
     if (!collection?.value?.id || !collectionView?.value?.id) {
-      const collectionBlockPageId = (blockValue.id as string | undefined) ?? pageId;
-      const collectionPage = await fetchPageById(collectionBlockPageId, notionToken);
+      const collectionPage = await fetchPageById(blockId, notionToken);
 
       collection = getFirstCollection(collectionPage.recordMap.collection);
       collectionView = getFirstCollectionView(
@@ -153,7 +118,7 @@ export const getTableData = async (
   const blocks = table?.recordMap?.block ?? {};
 
   const tableArr: RowType[] = blockIds
-    .map((id: string) => normalizeBlock(blocks[id]))
+    .map((id: string) => normalizeRowRecord(blocks[id]))
     .filter((row): row is RowType => row !== null);
 
   const tableData = tableArr.filter(
@@ -164,10 +129,10 @@ export const getTableData = async (
   const rows: Row[] = [];
 
   for (const td of tableData) {
-    let row: Row = { id: td.value.id };
+    const row: Row = { id: td.value.id };
 
     for (const key of collectionColKeys) {
-      const val = td.value.properties?.[key];
+      const val = td.value.properties?.[key] as RowType["value"]["properties"][string];
       if (val) {
         const schema = collectionRows[key];
         row[schema.name] = raw ? val : getNotionValue(val, schema.type, td);
@@ -193,7 +158,7 @@ export async function tableRoute(c: HandlerRequest) {
     );
   }
   return await getTable({ pageId, notionToken });
- 
+
 }
 
 
