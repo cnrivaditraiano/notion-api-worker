@@ -14,7 +14,7 @@ const cacheSettings = cache({
   cacheControl: 'public, s-maxage=604800, max-age=0, must-revalidate',
 });
 const addCacheTags = (c: Context, tags: string[]) => {
-    c.header('Cache-Tag', ["global-notion", ...tags].join(', '));
+    c.header('Cache-Tag', ["global-blog", ...tags].join(', '));
 }
 const app = new Hono().basePath("/v1");
 app.use("*", cacheSettings);
@@ -25,7 +25,7 @@ app.get("/page/:pageId", async (c) => {
     if(!notionToken || !pageId) {
         return c.json({ error: "Invalid Notion page ID or Notion token" }, 400);
     }
-    addCacheTags(c, [`page-${pageId}`]);
+    addCacheTags(c, [`blog-page-${pageId}`, "blog-pages"]);
     return c.json(await getPageBlocks({ pageId, notionToken }));
 });
 
@@ -39,7 +39,7 @@ app.get("/table/:tableId", async (c) => {
     if(!res.success) {
         return c.json({ error: res.error }, 400);
     }
-    addCacheTags(c, [`table-${tableId}`]);
+    addCacheTags(c, [`blog-table-${tableId}`, "blog-tables"]);
     return c.json(res.data);
 
 });
@@ -49,7 +49,7 @@ app.get("/table", async (c) => {
     if(!res.success) {
         return c.json({ error: res.error }, 400);
     }
-    addCacheTags(c, [`default-table`]);
+    addCacheTags(c, ["blog-table-all"]);
     return c.json(res.data);
 });
 
